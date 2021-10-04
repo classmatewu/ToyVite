@@ -1,0 +1,26 @@
+{
+  "name": "ToyVite",
+  "version": "1.0.0",
+  "description": "手写实现一个迷你的Vite",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon ./server/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/classmatewu/ToyVite.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/classmatewu/ToyVite/issues"
+  },
+  "homepage": "https://github.com/classmatewu/ToyVite#readme",
+  "dependencies": {
+    "koa": "^2.13.3",
+    "koa-static": "^5.0.0",
+    "nodemon": "^2.0.13"
+  }
+}

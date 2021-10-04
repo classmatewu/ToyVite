@@ -1,0 +1,1 @@
+export const a = '小吴同学'
