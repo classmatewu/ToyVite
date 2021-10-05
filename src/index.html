@@ -10,5 +10,12 @@
   <div id="app"></div>
   <!-- 用下面这句开启浏览器的esm模块方式 -->
   <script type="module" src="./index.js"></script>
+  <script>
+    window.process = {
+      env: {
+        NODE_ENV: 'dev'
+      }
+    }
+  </script>
 </body>
 </html>

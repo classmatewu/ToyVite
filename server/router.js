@@ -66,11 +66,22 @@ const handleLibRouter = (ctx) => {
  * @description 处理.vue文件，将.vue文件变为.js文件返回
  */
 const handleVueRouter = (ctx) => {
-  const fileAbsPath = path.resolve(entryDirname, `.${ctx.url}`)
+  const url = ctx.url.split('?')[0] // 由于.vue文件url有两种，一种是带参数的，所以需要先取去掉参数，以免找不到文件
+  const fileAbsPath = path.resolve(entryDirname, `.${url}`)
   const vueCodeStr = fs.readFileSync(fileAbsPath, 'utf-8')
-  const jsCodeStr = utils.parseVue(vueCodeStr)
+  const { jsCodeStr, transformRenderModuleStr: renderModuleStr } = utils.parseVue(url, vueCodeStr)
+
+  // .vue文件有分两种情况，type==='tempalte'，返回render module，否则返回主逻辑script
+  const { type } = ctx.query
+  let body = ''
+  if (type === 'template') {
+    body = renderModuleStr
+  } else {
+    body = jsCodeStr
+  }
+
   ctx.type = 'application/javascript'
-  ctx.body = jsCodeStr
+  ctx.body = body
 }
 
 module.exports = router

@@ -7,8 +7,10 @@
 <script>
 export default {
   name: 'App',
-  data: {
-    name: '小吴同学'
+  data() {
+    return {
+      name: '小吴同学'
+    }
   }
 }
 </script>

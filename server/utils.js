@@ -17,13 +17,27 @@ const transformPath = (source = '') => {
   const ast = parser.parse(source, {
     sourceType: "module",
   })
+  const rewritePath = (node) => {
+    console.log('---1---', node?.source?.value);
+    const esmPath = node?.source?.value // 可能是绝对路径，也可能是相对路径
+    if (!isLegalEsmPath(esmPath) && esmPath) {
+      node.source.value = `/node_modules/${esmPath}` // TODO 这里稍稍有点小疑问，我这里的node参数不是利用对象解构拿到的么，解构不是深拷贝么，为什么在这里重新赋值，也能得到改造效果，什么原理？？
+    }
+  }
   traverse(ast, {
+    // esm模块加载有两种方式，一种是import xxx from yyy，另一种是export xxx from yyy，之前漏了第二种，现在补上
+    // import Vue from 'vue'
     ImportDeclaration({node}) {
-      const esmPath = node?.source?.value // 可能是绝对路径，也可能是相对路径
-      if (!isLegalEsmPath(esmPath)) {
-        node.source.value = `/node_modules/${esmPath}` // TODO 这里稍稍有点小疑问，我这里的node参数不是利用对象解构拿到的么，解构不是深拷贝么，为什么在这里重新赋值，也能得到改造效果，什么原理？？
-      }
+      rewritePath(node)
     },
+    // export * from '@vue/runtime-dom';
+    ExportAllDeclaration({node}) {
+      rewritePath(node)
+    },
+    // export {camelize, capitalize, normalizeClass, normalizeProps, normalizeStyle, toDisplayString, toHandlerKey} from '@vue/shared';
+    ExportNamedDeclaration({node}) {
+      rewritePath(node)
+    }
   })
   const transformSource = generator.default(ast, {}, source).code
   return transformSource
@@ -38,7 +52,7 @@ const isLegalEsmPath = esmPath => {
   const legalEsmPath = ['/', './', '../']
   let isLegalEsmPath = false
   legalEsmPath.some(path => {
-    if (esmPath.startsWith(path)) {
+    if (esmPath?.startsWith(path)) {
       isLegalEsmPath = true
       return true
     }
@@ -54,25 +68,31 @@ const isLegalEsmPath = esmPath => {
  *  3. 将template转换为render渲染函数，然后放进script中
  *  4. 处理css文件，
  */
-const parseVue = (source) => {
+const parseVue = (url, source) => {
   const ast = compilerSFC.parse(source)
   const {template, script, styles} = ast.descriptor
-  console.log('---ast---', template, script, styles);
+
   // 改匿名导出为申明，后面插入render函数后再导出
   const scriptCode = script.content.replace(/export default/, 'const script =')
   const transformScriptCode = transformPath(scriptCode) // 只要是js，就需要转换裸模块的引用方式
+
   // 将template转换为render渲染函数
-  const { code: render } = compilerDOM.compile(template.content, {mode: 'module'}) // 不以module方式的话，拿到的code包含with()写法，在严格模式下不通过，浏览器报错`Uncaught SyntaxError: Strict mode code may not include a with statement`
-  const transformRenderStr = transformPath(render) // 打印render看了下，这种mode方式下，返回的代码里有import vue，所以也需要转换下裸模块路径
-  console.log('---render---', render);
-  // 由于拿到的render是一段js代码字符串同时又return了一个render函数，类似这样：`console.log(100);return 200`
-  // 所以我们需要这样：eval('(() => {console.log(100);return 200})()')，有点绕，复制到控制台看下、改改，就明白了
+  const { code: renderModule } = compilerDOM.compile(template.content, {mode: 'module'}) // 不以module方式的话（vite也是module方式单独引），拿到的code包含with()写法，在严格模式下不通过，浏览器报错`Uncaught SyntaxError: Strict mode code may not include a with statement`
+  const transformRenderModuleStr = transformPath(renderModule) // 打印render看了下，这种mode方式下，返回的代码里有import vue，所以也需要转换下裸模块路径
+  
   const jsCodeStr = `
     ${transformScriptCode}
-    script.render = eval((() => {${transformRenderStr}})())
+    // render module需要发起一次请求来获取，所以vue请求需要分两种情况来判断返回什么文件，type==='tempalte'，返回render module，否则返回主逻辑script
+    import { render } from '${url}?type=template'
+    script.render = render
     export default script
   `
-  return jsCodeStr
+
+  // 这里
+  return {
+    transformRenderModuleStr,
+    jsCodeStr
+  }
 }
 
 /**
