@@ -19,6 +19,8 @@ const router = (ctx) => {
     handleJsRouter(ctx)
   } else if (url.startsWith('/node_modules')) {
     handleLibRouter(ctx)
+  } else if (utils.getFileExtname(url) === '.vue') {
+    handleVueRouter(ctx)
   }
 }
 
@@ -39,7 +41,6 @@ const handleRootRouter = (ctx) => {
  */
 const handleJsRouter = ctx => {
   const fileAbsPath = path.resolve(entryDirname, `.${ctx.url}`)
-  console.log(entryDirname, fileAbsPath);
   const jsCodeStr = fs.readFileSync(fileAbsPath, 'utf-8')
   const transformCodeStr = utils.transformPath(jsCodeStr)
   ctx.type = 'application/javascript'
@@ -51,14 +52,25 @@ const handleJsRouter = ctx => {
  * 这里初版没有用vite的esbuild预编译方法，而是利用库文件的package.json的modul字段，来找到库打包输出的bundle文件
  */
 const handleLibRouter = (ctx) => {
-  // const libName = ctx.url.split('/').pop()
   const libAbsPath = path.resolve(entryDirname, `../${ctx.url}`)
   const { module: libBundlePath } = require(`${libAbsPath}/package.json`)
-  console.log(123, libBundlePath);
   const libBundleAbsPath = `${libAbsPath}/${libBundlePath}`
   const libBundleStr = fs.readFileSync(libBundleAbsPath, 'utf-8')
+  const transformCodeStr = utils.transformPath(libBundleStr) // 也同样需要改写裸模块的加载方式
+  utils.setStrongCache(ctx) // 设置强缓存
   ctx.type = 'application/javascript'
-  ctx.body = libBundleStr
+  ctx.body = transformCodeStr
+}
+
+/**
+ * @description 处理.vue文件，将.vue文件变为.js文件返回
+ */
+const handleVueRouter = (ctx) => {
+  const fileAbsPath = path.resolve(entryDirname, `.${ctx.url}`)
+  const vueCodeStr = fs.readFileSync(fileAbsPath, 'utf-8')
+  const jsCodeStr = utils.parseVue(vueCodeStr)
+  ctx.type = 'application/javascript'
+  ctx.body = jsCodeStr
 }
 
 module.exports = router

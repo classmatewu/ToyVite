@@ -22,6 +22,8 @@
     "@babel/generator": "^7.15.4",
     "@babel/parser": "^7.15.7",
     "@babel/traverse": "^7.15.4",
+    "@vue/compiler-dom": "^3.2.19",
+    "@vue/compiler-sfc": "^3.2.19",
     "koa": "^2.13.3",
     "koa-static": "^5.0.0",
     "nodemon": "^2.0.13",

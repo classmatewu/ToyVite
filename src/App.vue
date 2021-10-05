@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="wapper">
     hello, {{name}}
   </div>
 </template>
@@ -12,3 +12,10 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scope>
+#wapper {
+  background-color: rgb(62, 202, 137);
+  color: #333;
+}
+</style>
