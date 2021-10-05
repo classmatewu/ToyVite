@@ -1,6 +1,7 @@
 const Koa = require('koa')
 const static = require('koa-static')
 const path = require('path')
+const router = require('./router')
 const app = new Koa()
 
 /**
@@ -9,10 +10,11 @@ const app = new Koa()
 // const staticPath = path.resolve(__dirname, '../src')
 // app.use(static(staticPath))
 
-app.use((ctx) => {
-  console.log('小吴同学', ctx);
-  ctx.body = 'Hello ToyVite!!'
-})
+// app.use((ctx) => {
+//   console.log('小吴同学', ctx);
+//   ctx.body = 'Hello ToyVite!!'
+// })
+app.use(router)
 
 /**
  * 1. js文件：转换裸模块的import路径，再返回

@@ -19,8 +19,12 @@
   },
   "homepage": "https://github.com/classmatewu/ToyVite#readme",
   "dependencies": {
+    "@babel/generator": "^7.15.4",
+    "@babel/parser": "^7.15.7",
+    "@babel/traverse": "^7.15.4",
     "koa": "^2.13.3",
     "koa-static": "^5.0.0",
-    "nodemon": "^2.0.13"
+    "nodemon": "^2.0.13",
+    "vue": "^2.6.14"
   }
 }
